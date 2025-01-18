@@ -7,26 +7,24 @@
 % This function has either integers or floats as its value, 
 % depending on the parameters sent in
 add(A, B)->
-	to_do. % fill out the body of this function
+	A + B.
 
 % This function has floats as its value
 divide(Dividend, Divisor)->
-	to_do.
+	Dividend / Divisor.
 
 % This function has as its value the greatest integer less than the 
 % float that is the result of division
 lower_divide(Dividend, Divisor)->
-	to_do.
+	Dividend div Divisor.
 
 % This function has as its value an integer that is the remainder of doing the division
 remainder(Dividend, Divisor)->
-	to_do.
+	Dividend rem Divisor.
 
 % Here is an example of a completed function. This one is passing its unit tests.
 difference(Minuend, Subtrahend)->
 	Minuend - Subtrahend.
-
-
 
 -ifdef(EUNIT).
 %
@@ -104,7 +102,7 @@ remainder_test_()->
 % Create a list of 10 random integers between 1 and 10
 % Hint: use "rand:uniform(10)" to create a single random integer between 1 and 10
 random_list_test_() ->
-	Random_numbers = [], % TODO: Replace this with a list of 10 random integers 
+	Random_numbers = [rand:uniform(10) || _ <- lists:seq(1,10)], % Using list comprehension to generate 10 random numbers
 	[?_assert(is_list(Random_numbers)), % This checks that Random_numbers is a list
 	 ?_assertEqual(10, length(Random_numbers)), % This checks that Random_numbers has 10 elements
 	 ?_assertEqual([], lists:filter(fun(N)-> N > 10 end, Random_numbers)) % This checks that all the numbers are between 1 and 10
@@ -114,7 +112,16 @@ random_list_test_() ->
 % a name, as an atom, a gender, as an atom, and a height, as a float in that order. 
 % For example, one tuple might be {john, male, 1.8}.
 person_tuple_list_test_() ->
-	People = [], % TODO: Replace this with the list of tuples described in the previous comment
+	People = [
+        {john, male, 1.8},
+        {sarah, female, 1.65},
+        {alex, other, 1.75},
+        {emma, female, 1.7},
+        {michael, male, 1.85},
+        {sam, other, 1.72},
+        {jessica, female, 1.68},
+        {david, male, 1.82}
+    ], % List of tuples with name (atom), gender (atom), and height (float)
 	[?_assert(is_list(People)), % This checks that People is a list
 	 ?_assert(length(People) >= 8), % This checks that People has at least 8 elements
 	 
@@ -127,7 +134,7 @@ person_tuple_list_test_() ->
 
 % Create a list of genders that includes male, female, and other
 gender_list_test_()->
-	Genders = [], % TODO: Replace this with a list of genders including male, female, and other
+	Genders = [male, female, other], % Simple list containing all required genders
 	[?_assert(lists:member(male, Genders)), % This checks that male is in the list
 	 ?_assert(lists:member(female, Genders)), % This checks that female is in the list
 	 ?_assert(lists:member(other, Genders)), % This checks that other is in the list
