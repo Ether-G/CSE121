@@ -6,55 +6,80 @@
 %% Client Interface Functions
 
 factorial_of(Server, N) when is_integer(N), N >= 0 ->
-    Server ! {self(), factorial, N},
+    case is_pid(Server) of
+        true -> Server ! {self(), factorial, N};
+        false -> whereis(Server) ! {self(), factorial, N}
+    end,
     receive
-        {Server, Result} -> Result
+        {_From, Result} -> Result
+    after 5000 ->
+        timeout
     end;
-factorial_of(Server, N) when is_integer(N) ->
+factorial_of(_Server, N) when is_integer(N) ->
     {fail, N, is_negative};
-factorial_of(Server, N) when is_float(N) ->
+factorial_of(_Server, N) when is_float(N) ->
     {fail, N, is_not_integer};
-factorial_of(Server, N) ->
+factorial_of(_Server, N) ->
     {fail, N, is_not_integer}.
 
 add(Server, X, Y) when is_number(X), is_number(Y) ->
-    Server ! {self(), add, X, Y},
+    case is_pid(Server) of
+        true -> Server ! {self(), add, X, Y};
+        false -> whereis(Server) ! {self(), add, X, Y}
+    end,
     receive
-        {Server, Result} -> Result
+        {_From, Result} -> Result
+    after 5000 ->
+        timeout
     end;
-add(Server, X, _Y) when not is_number(X) ->
+add(_Server, X, _Y) when not is_number(X) ->
     {fail, X, is_not_number};
-add(Server, _X, Y) ->
+add(_Server, _X, Y) ->
     {fail, Y, is_not_number}.
 
 subtract(Server, X, Y) when is_number(X), is_number(Y) ->
-    Server ! {self(), subtract, X, Y},
+    case is_pid(Server) of
+        true -> Server ! {self(), subtract, X, Y};
+        false -> whereis(Server) ! {self(), subtract, X, Y}
+    end,
     receive
-        {Server, Result} -> Result
+        {_From, Result} -> Result
+    after 5000 ->
+        timeout
     end;
-subtract(Server, X, _Y) when not is_number(X) ->
+subtract(_Server, X, _Y) when not is_number(X) ->
     {fail, X, is_not_number};
-subtract(Server, _X, Y) ->
+subtract(_Server, _X, Y) ->
     {fail, Y, is_not_number}.
 
 multiply(Server, X, Y) when is_number(X), is_number(Y) ->
-    Server ! {self(), multiply, X, Y},
+    case is_pid(Server) of
+        true -> Server ! {self(), multiply, X, Y};
+        false -> whereis(Server) ! {self(), multiply, X, Y}
+    end,
     receive
-        {Server, Result} -> Result
+        {_From, Result} -> Result
+    after 5000 ->
+        timeout
     end;
-multiply(Server, X, _Y) when not is_number(X) ->
+multiply(_Server, X, _Y) when not is_number(X) ->
     {fail, X, is_not_number};
-multiply(Server, _X, Y) ->
+multiply(_Server, _X, Y) ->
     {fail, Y, is_not_number}.
 
 divide(Server, X, Y) when is_number(X), is_number(Y) ->
-    Server ! {self(), divide, X, Y},
+    case is_pid(Server) of
+        true -> Server ! {self(), divide, X, Y};
+        false -> whereis(Server) ! {self(), divide, X, Y}
+    end,
     receive
-        {Server, Result} -> Result
+        {_From, Result} -> Result
+    after 5000 ->
+        timeout
     end;
-divide(Server, X, _Y) when not is_number(X) ->
+divide(_Server, X, _Y) when not is_number(X) ->
     {fail, X, is_not_number};
-divide(Server, _X, Y) ->
+divide(_Server, _X, Y) ->
     {fail, Y, is_not_number}.
 
 %% Server Process Functions
@@ -64,6 +89,8 @@ factorializer() ->
         {From, factorial, N} ->
             Result = calc_factorial(N),
             From ! {self(), Result},
+            factorializer();
+        _ ->
             factorializer()
     end.
 
@@ -71,6 +98,8 @@ adder() ->
     receive
         {From, add, X, Y} ->
             From ! {self(), X + Y},
+            adder();
+        _ ->
             adder()
     end.
 
@@ -78,6 +107,8 @@ subtracter() ->
     receive
         {From, subtract, X, Y} ->
             From ! {self(), X - Y},
+            subtracter();
+        _ ->
             subtracter()
     end.
 
@@ -85,6 +116,8 @@ multiplier() ->
     receive
         {From, multiply, X, Y} ->
             From ! {self(), X * Y},
+            multiplier();
+        _ ->
             multiplier()
     end.
 
@@ -92,25 +125,27 @@ divider() ->
     receive
         {From, divide, X, Y} ->
             From ! {self(), X / Y},
+            divider();
+        _ ->
             divider()
     end.
 
 %% Start Functions
 
 start_factorializer() ->
-    spawn(?MODULE, factorializer, []).
+    register(factorializer, spawn(?MODULE, factorializer, [])).
 
 start_adder() ->
-    spawn(?MODULE, adder, []).
+    register(adder, spawn(?MODULE, adder, [])).
 
 start_subtracter() ->
-    spawn(?MODULE, subtracter, []).
+    register(subtracter, spawn(?MODULE, subtracter, [])).
 
 start_multiplier() ->
-    spawn(?MODULE, multiplier, []).
+    register(multiplier, spawn(?MODULE, multiplier, [])).
 
 start_divider() ->
-    spawn(?MODULE, divider, []).
+    register(divider, spawn(?MODULE, divider, [])).
 
 %% Helper Functions
 
@@ -123,7 +158,6 @@ calc_factorial(N) -> N * calc_factorial(N-1).
 %%
 
 -include_lib("eunit/include/eunit.hrl").
-
 
 factorializer_test_() ->
 {setup, 
@@ -153,7 +187,6 @@ adder_test_() ->
     %fun(_)->%runs after all of the tests
         %there is no teardown needed, so this fun doesn't need to be implemented.
     %end, 
-    %factorializer tests start here
     [ ?_assertEqual(8, add(test_adder, 5, 3)), %happy path
       % test less obvious or edge cases
       ?_assertEqual(0, add(test_adder, 0, 0)), 
@@ -172,10 +205,6 @@ subtracter_test_() ->
             Pid = spawn(?MODULE, subtracter, []),     
             register(test_subtracter, Pid)
         end, 
-    %fun(_)->%runs after all of the tests
-        %there is no teardown needed, so this fun doesn't need to be implemented.
-    %end, 
-    %factorializer tests start here
     [ ?_assertEqual(2, subtract(test_subtracter, 5, 3)), %happy path
       % test less obvious or edge cases
       ?_assertEqual(0, subtract(test_subtracter, 0, 0)), 
@@ -194,10 +223,6 @@ multiplier_test_() ->
             Pid = spawn(?MODULE, multiplier, []),     
             register(test_multiplier, Pid)
         end, 
-    %fun(_)->%runs after all of the tests
-        %there is no teardown needed, so this fun doesn't need to be implemented.
-    %end, 
-    %factorializer tests start here
     [ ?_assertEqual(15, multiply(test_multiplier, 5, 3)), %happy path
       % test less obvious or edge cases
       ?_assertEqual(0, multiply(test_multiplier, 0, 0)), 
@@ -216,10 +241,6 @@ divider_test_() ->
             Pid = spawn(?MODULE, divider, []),     
             register(test_divider, Pid)
         end, 
-    %fun(_)->%runs after all of the tests
-        %there is no teardown needed, so this fun doesn't need to be implemented.
-    %end, 
-    %factorializer tests start here
     [ ?_assert((1.6 < divide(test_divider, 5, 3)) and (divide(test_divider, 5, 3) < 1.7)), %happy path
       % test less obvious or edge cases
       ?_assertEqual(-1.0, divide(test_divider, -5, 5)), 
