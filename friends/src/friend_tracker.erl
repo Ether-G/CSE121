@@ -32,7 +32,45 @@ rpc(Pid,Message)->
 %%---------------------------
 
 run(Friend_list) ->
-	% TODO: complete this function.
+    receive
+        {From, {add, Friend}} when not is_list(Friend) ->
+            From ! received,
+            run([Friend | Friend_list]);
+            
+        {From, {add, Friends}} when is_list(Friends) ->
+            From ! received,
+            run(Friends ++ Friend_list);
+            
+        {From, {remove, Friend}} when not is_list(Friend) ->
+            From ! received,
+            run(lists:delete(Friend, Friend_list));
+            
+        {From, {remove, Friends}} when is_list(Friends) ->
+            From ! received,
+            NewList = lists:foldl(fun(F, Acc) -> 
+                lists:delete(F, Acc) 
+            end, Friend_list, Friends),
+            run(NewList);
+            
+        {From, {has_friend, Friend}} ->
+            From ! lists:member(Friend, Friend_list),
+            run(Friend_list);
+            
+        {From, {has_friends, Friends}} ->
+            Result = lists:all(fun(Friend) -> 
+                lists:member(Friend, Friend_list)
+            end, Friends),
+            From ! Result,
+            run(Friend_list);
+            
+        {From, get} ->
+            From ! Friend_list,
+            run(Friend_list);
+            
+        {From, _UnknownMessage} ->
+            From ! {fail, unrecognized_message},
+            run(Friend_list)
+    end.
 	
 
 -ifdef(EUNIT).
