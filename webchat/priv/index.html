@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebChat</title>
+    <style>
+        #messages { 
+            height: 300px; 
+            overflow-y: scroll; 
+            border: 1px solid #ccc; 
+            margin-bottom: 10px; 
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="login">
+        <input type="text" id="username" placeholder="Enter username">
+        <button onclick="join()">Join Chat</button>
+    </div>
+    <div id="chat" style="display: none;">
+        <div id="messages"></div>
+        <input type="text" id="message" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        let ws;
+        let username;
+
+        function join() {
+            username = document.getElementById('username').value;
+            if (!username) return;
+
+            ws = new WebSocket('ws://' + window.location.host + '/websocket');
+            
+            ws.onopen = function() {
+                ws.send(JSON.stringify({
+                    type: 'join',
+                    username: username
+                }));
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('chat').style.display = 'block';
+            };
+
+            ws.onmessage = function(evt) {
+                const msg = JSON.parse(evt.data);
+                const messages = document.getElementById('messages');
+                messages.innerHTML += `<p><strong>${msg.username}:</strong> ${msg.message}</p>`;
+                messages.scrollTop = messages.scrollHeight;
+            };
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('message');
+            const message = messageInput.value;
+            if (!message) return;
+
+            ws.send(JSON.stringify({
+                type: 'message',
+                username: username,
+                message: message
+            }));
+            messageInput.value = '';
+        }
+
+        document.getElementById('message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{application,webchat,
+             [{description,"A web-based chat server"},
+              {vsn,"0.1.0"},
+              {registered,[]},
+              {mod,{webchat_app,[]}},
+              {applications,[kernel,stdlib,cowboy]},
+              {env,[]},
+              {modules,[webchat_app,webchat_handler,webchat_server,
+                        webchat_sup]},
+              {licenses,["Apache-2.0"]},
+              {links,[]}]}.
